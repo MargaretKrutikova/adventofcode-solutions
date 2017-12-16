@@ -163,6 +163,79 @@ class Solutions {
     findBadNodeWeight(parentNode, treeMap);
     return correctWeight;
   }
+  static day8 = (input) => {
+    const lineRegex = /(\w+) (inc|dec) (-*\d+) if (\w+) ([><!=]{1,3} -*\d+)/g;
+    
+    let registers = new Map();
+    const getRegisterValue = (name) => registers.has(name) ? registers.get(name) : 0;
+    const setRegisterValue = (name, value) => registers.set(name, value);
+
+    const createInstruction = (line, getRegisterValue) => {
+      let matches = lineRegex.exec(line);
+
+      let register = matches[1];
+      let amount = +matches[3];
+
+      let actionFn = matches[2] === "inc" ? 
+        (val) => val + amount :
+        (val) => val - amount;
+
+      let registerToCheck = matches[4];
+      let condition = matches[5];
+      let conditionFn = () => eval(`${getRegisterValue(registerToCheck)} ${condition}`);
+      lineRegex.lastIndex = 0;
+      return { register, actionFn, conditionFn };
+    }
+    
+    const evaluateInstruction = ({ register, actionFn, conditionFn }, getRegisterValue, setRegisterValue) => {
+      if (conditionFn()) {
+        let currentValue = getRegisterValue(register);
+        let newValue = actionFn(currentValue);
+        setRegisterValue(register, newValue);
+      }
+    };
+
+    input.split('\n')
+      .map(i => createInstruction(i.trim(), getRegisterValue))
+      .forEach(instruction => evaluateInstruction(instruction, getRegisterValue, setRegisterValue));
+
+    return Math.max(...registers.values());
+  }
+  static day9 = (input) => {
+    const getTotalScore = (position = 0, parentGroupScore = 0, currentScore = 0) => {
+      if (position >= input.length) return currentScore;
+
+      if (input[position] === '!') {
+        return getTotalScore(position + 2, parentGroupScore, currentScore);
+      }
+      
+      if (input[position] === '<') {
+        let nextPosition = getGarbageClosingPosition(position + 1);
+        return getTotalScore(nextPosition, parentGroupScore, currentScore);
+      }
+      
+      if (input[position] === '{') {
+        currentScore += (parentGroupScore + 1);
+        return getTotalScore(position + 1, parentGroupScore + 1, currentScore);
+      }
+      if (input[position] === '}') {
+        return getTotalScore(position + 1, parentGroupScore - 1, currentScore);
+      }
+
+      return getTotalScore(position + 1, parentGroupScore, currentScore);
+    };
+    const getGarbageClosingPosition = (position) => {
+      if (input[position] === '!') {
+        return getGarbageClosingPosition(position + 2);
+      }
+      if (input[position] === '>') return position + 1;
+
+      return getGarbageClosingPosition(position + 1);
+    };
+    
+    // 11089
+    return getTotalScore();
+  }
 }
 
 const Answers = {
@@ -172,7 +245,9 @@ const Answers = {
   day4: Solutions.day4(inputArray[3]),
   day5: Solutions.day5(inputArray[4]),
   day6: Solutions.day6(inputArray[5]),
-  day7: Solutions.day7(inputArray[6])
+  day7: Solutions.day7(inputArray[6]),
+  day8: Solutions.day8(inputArray[7]),
+  day9: Solutions.day9(inputArray[8])
 };
 
 export default Answers;
